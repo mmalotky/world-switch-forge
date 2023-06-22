@@ -18,7 +18,7 @@ public class SetWorldCommand {
 
     private int setWorld(CommandSourceStack source)  {
         Entity entity = source.getEntity();
-        String[] files = source.getServer().getFile(".").list();
+        String files = source.getServer().getFile(".").list().toString();
 
         Component comp = new TranslatableComponent("chat.type.announcement", source.getDisplayName(), files);
         source.getServer().getPlayerList().broadcastMessage(comp, ChatType.CHAT, entity != null ? entity.getUUID() : Util.NIL_UUID);
