@@ -5,12 +5,10 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.world.entity.player.Player;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.Entity;
 
 public class SetWorldCommand {
     public SetWorldCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -19,21 +17,11 @@ public class SetWorldCommand {
     }
 
     private int setWorld(CommandSourceStack source)  {
+        Entity entity = source.getEntity();
+        String file = source.getServer().getFile(".").getName();
 
-        try {
-            File serverProperties = source.getServer().getFile("server.properties");
-            Scanner myReader = new Scanner(serverProperties);
-            while (myReader.hasNextLine()) {
-                String data = myReader.nextLine();
-                if(data.contains("level-name=")) {
-                    if(source.getEntity() instanceof Player) source.getEntity().sendMessage(new TextComponent(data), Util.NIL_UUID);
-                }
-            }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
+        Component comp = new TranslatableComponent("chat.type.announcement", source.getDisplayName(), file);
+        source.getServer().getPlayerList().broadcastMessage(comp, ChatType.CHAT, entity != null ? entity.getUUID() : Util.NIL_UUID);
 
         return Command.SINGLE_SUCCESS;
     }
