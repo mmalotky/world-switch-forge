@@ -10,12 +10,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.Entity;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
 public class SetWorldCommand {
     public SetWorldCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -26,19 +22,32 @@ public class SetWorldCommand {
     private int setWorld(CommandSourceStack source)  {
         Entity entity = source.getEntity();
         File serverProperties = source.getServer().getFile("./server.properties");
+        List<String> lines = new ArrayList<>();
         String print = "err";
 
         try (Scanner reader = new Scanner(serverProperties)) {
             while (reader.hasNextLine()) {
                 String data = reader.nextLine();
                 if(data.contains("level-name=")) {
-                    print = data;
+                    data = String.format("level-name=%s", UUID.randomUUID());
                 }
+                lines.add(data);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(serverProperties))){
+            for(String line : lines) {
+                writer.write(line);
+                writer.newLine();
+                if(line.contains("level-name=")) {
+                    print = line;
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         Component comp = new TranslatableComponent("chat.type.announcement", source.getDisplayName(), print);
         source.getServer().getPlayerList().broadcastMessage(comp, ChatType.CHAT, entity != null ? entity.getUUID() : Util.NIL_UUID);
 
