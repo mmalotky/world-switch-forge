@@ -2,33 +2,29 @@ package com.mmalotky.worldswitch.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.Util;
+import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.ChatType;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.world.entity.Entity;
+import org.slf4j.Logger;
 
 import java.io.*;
-import java.sql.SQLOutput;
 
 public class SetWorldCommand {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public SetWorldCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("world")
                 .then(Commands.literal("set").executes(command -> setWorld(command.getSource()))));
     }
 
-    private int setWorld(CommandSourceStack source)  {
+    private int setWorld(CommandSourceStack source) {
         String world = source.getServer().getWorldData().getLevelName();
         File worldFile = source.getServer().getFile(String.format("./%s", world));
-        if (deleteDirectory(worldFile)) {
-
-        }
-        else {
-            System.out.printf("Error: World file %s not found.%n", world);
+        if (!deleteDirectory(worldFile)) {
+            LOGGER.error(String.format("Error: Unable to delete world file %s.", world));
             return 0;
         }
+        source.getServer().halt(false);
+
         return Command.SINGLE_SUCCESS;
     }
 
@@ -38,7 +34,7 @@ public class SetWorldCommand {
         else if(files.length == 0) return directory.delete();
 
         for(File file : files) {
-            System.out.printf("Deleting %s%n", file.getName());
+            LOGGER.info(String.format("Deleting %s", file.getName()));
             if(file.isDirectory()) deleteDirectory(file);
             else if(!file.delete()) return false;
         }
