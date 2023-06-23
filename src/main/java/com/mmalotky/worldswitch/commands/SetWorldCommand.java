@@ -11,7 +11,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.Entity;
 
 import java.io.*;
-import java.util.*;
+import java.sql.SQLOutput;
 
 public class SetWorldCommand {
     public SetWorldCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -20,37 +20,28 @@ public class SetWorldCommand {
     }
 
     private int setWorld(CommandSourceStack source)  {
-        Entity entity = source.getEntity();
-        File serverProperties = source.getServer().getFile("./server.properties");
-        List<String> lines = new ArrayList<>();
-        String print = "err";
+        String world = source.getServer().getWorldData().getLevelName();
+        File worldFile = source.getServer().getFile(String.format("./%s", world));
+        if (deleteDirectory(worldFile)) {
 
-        try (Scanner reader = new Scanner(serverProperties)) {
-            while (reader.hasNextLine()) {
-                String data = reader.nextLine();
-                if(data.contains("level-name=")) {
-                    data = String.format("level-name=%s", UUID.randomUUID());
-                }
-                lines.add(data);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         }
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(serverProperties))){
-            for(String line : lines) {
-                writer.write(line);
-                writer.newLine();
-                if(line.contains("level-name=")) {
-                    print = line;
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        else {
+            System.out.printf("Error: World file %s not found.%n", world);
+            return 0;
         }
-        Component comp = new TranslatableComponent("chat.type.announcement", source.getDisplayName(), print);
-        source.getServer().getPlayerList().broadcastMessage(comp, ChatType.CHAT, entity != null ? entity.getUUID() : Util.NIL_UUID);
-
         return Command.SINGLE_SUCCESS;
+    }
+
+    private boolean deleteDirectory(File directory) {
+        File[] files = directory.listFiles();
+        if(files == null) return false;
+        else if(files.length == 0) return directory.delete();
+
+        for(File file : files) {
+            System.out.printf("Deleting %s%n", file.getName());
+            if(file.isDirectory()) deleteDirectory(file);
+            else if(!file.delete()) return false;
+        }
+        return directory.delete();
     }
 }
