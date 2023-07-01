@@ -34,15 +34,12 @@ public class ModEvents {
         String[] players = new File(String.valueOf(playerData)).list();
         if(players == null || players.length == 0) return;
 
-        LOGGER.info("Injecting player data.");
-        IOMethods.copyDirectory(playerData, playerDataCopy);
-
         double x = event.getServer().getWorldData().overworldData().getXSpawn();
         double y = event.getServer().getWorldData().overworldData().getYSpawn();
         double z = event.getServer().getWorldData().overworldData().getZSpawn();
         LOGGER.info(String.format("Updating spawn to %s, %s, %s", x, y, z));
 
-        File[] playerFiles = new File(String.valueOf(playerDataCopy)).listFiles();
+        File[] playerFiles = new File(String.valueOf(playerData)).listFiles();
         if(playerFiles == null) return;
         for(File file : playerFiles) {
             if(file.getName().contains(".dat_old")) continue;
@@ -57,15 +54,17 @@ public class ModEvents {
                 pos.add(DoubleTag.valueOf(z));
 
                 tag.put("Pos", pos);
-                DataOutputStream output = new DataOutputStream(new GzipCompressorOutputStream(new FileOutputStream(file)));
-                tag.write(output);
+                NbtIo.writeCompressed(tag, file);
 
-                output.close();
+                LOGGER.info(tag.getAsString());
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
                 e.printStackTrace();
             }
         }
+
+        LOGGER.info("Injecting player data.");
+        IOMethods.copyDirectory(playerData, playerDataCopy);
 
         LOGGER.info("Player Data Set");
     }
