@@ -9,6 +9,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -56,8 +57,9 @@ public class ModEvents {
                 pos.add(DoubleTag.valueOf(z));
 
                 tag.put("Pos", pos);
-                DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
+                DataOutputStream output = new DataOutputStream(new GzipCompressorOutputStream(new FileOutputStream(file)));
                 tag.write(output);
+
                 output.close();
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
