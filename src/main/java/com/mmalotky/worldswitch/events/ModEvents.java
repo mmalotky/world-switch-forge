@@ -4,18 +4,14 @@ import com.mmalotky.worldswitch.IO.IOMethods;
 import com.mmalotky.worldswitch.WorldSwitch;
 import com.mmalotky.worldswitch.commands.SetWorldCommand;
 import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.NbtComponent;
+import net.minecraft.nbt.*;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraft.nbt.NbtIo;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 
 @Mod.EventBusSubscriber(modid = WorldSwitch.MOD_ID)
@@ -40,10 +36,9 @@ public class ModEvents {
         LOGGER.info("Injecting player data.");
         IOMethods.copyDirectory(playerData, playerDataCopy);
 
-        int x = event.getServer().getWorldData().overworldData().getXSpawn();
-        int y = event.getServer().getWorldData().overworldData().getYSpawn();
-        int z = event.getServer().getWorldData().overworldData().getZSpawn();
-        float angle = event.getServer().getWorldData().overworldData().getSpawnAngle();
+        double x = event.getServer().getWorldData().overworldData().getXSpawn();
+        double y = event.getServer().getWorldData().overworldData().getYSpawn();
+        double z = event.getServer().getWorldData().overworldData().getZSpawn();
         LOGGER.info(String.format("Updating spawn to %s, %s, %s", x, y, z));
 
         File[] playerFiles = new File(String.valueOf(playerDataCopy)).listFiles();
@@ -51,9 +46,19 @@ public class ModEvents {
         for(File file : playerFiles) {
             if(file.getName().contains(".dat_old")) continue;
             LOGGER.info("Updating " + file.getName());
-            try(FileInputStream stream = new FileInputStream(file)) {
-                CompoundTag tag = NbtIo.readCompressed(stream);
-                LOGGER.info(tag.get("Pos").getAsString());
+
+            try(FileInputStream input = new FileInputStream(file)) {
+                CompoundTag tag = NbtIo.readCompressed(input);
+
+                ListTag pos = new ListTag();
+                pos.add(DoubleTag.valueOf(x));
+                pos.add(DoubleTag.valueOf(y));
+                pos.add(DoubleTag.valueOf(z));
+
+                tag.put("Pos", pos);
+                DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
+                tag.write(output);
+                output.close();
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
                 e.printStackTrace();
