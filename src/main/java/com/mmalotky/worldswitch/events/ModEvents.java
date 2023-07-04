@@ -3,13 +3,13 @@ package com.mmalotky.worldswitch.events;
 import com.mmalotky.worldswitch.IO.IOMethods;
 import com.mmalotky.worldswitch.WorldSwitch;
 import com.mmalotky.worldswitch.commands.SetWorldCommand;
+import com.mmalotky.worldswitch.commands.StashCommand;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.*;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -22,6 +22,7 @@ public class ModEvents {
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
         new SetWorldCommand(event.getDispatcher());
+        new StashCommand(event.getDispatcher());
     }
 
     @SubscribeEvent
@@ -55,8 +56,6 @@ public class ModEvents {
 
                 tag.put("Pos", pos);
                 NbtIo.writeCompressed(tag, file);
-
-                LOGGER.info(tag.getAsString());
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
                 e.printStackTrace();

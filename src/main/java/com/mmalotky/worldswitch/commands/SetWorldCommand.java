@@ -3,51 +3,53 @@ package com.mmalotky.worldswitch.commands;
 import com.mmalotky.worldswitch.IO.IOMethods;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import org.slf4j.Logger;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 public class SetWorldCommand {
     private static final Logger LOGGER = LogUtils.getLogger();
     public SetWorldCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("world")
-                .then(Commands.literal("set").executes(command -> setWorld(command.getSource()))));
+                .then(Commands.literal("set")
+                        .then(Commands.argument("world", StringArgumentType.word())
+                                .executes(command -> setWorld(command.getSource(), StringArgumentType.getString(command, "world"))))));
     }
 
-    private int setWorld(CommandSourceStack source) {
-        String world = source.getServer().getWorldData().getLevelName();
-        File worldFile = source.getServer().getFile(String.format("./%s", world));
+    private int setWorld(CommandSourceStack source, String world) {
+        String worldName = source.getServer().getWorldData().getLevelName();
+        File worldFile = source.getServer().getFile(String.format("./%s", worldName));
 
-        savePlayerData(worldFile);
-
-        if (!IOMethods.deleteDirectory(worldFile)) {
-            LOGGER.error(String.format("Error: Unable to delete world file %s.", world));
+        File worldsFile = source.getServer().getFile("./worlds");
+        if(!worldsFile.exists()) worldsFile.mkdir();
+        File[] worldsFiles = worldsFile.listFiles();
+        if(worldsFiles == null) {
+            LOGGER.error("Worlds file not found.");
             return 0;
         }
+        if(!world.equals("new") && Arrays.stream(worldsFiles).noneMatch(file -> file.getName().equals(world))) {
+            LOGGER.error(String.format("World %s not recognised", world));
+            return 0;
+        }
+
+        StashCommand.stashPlayerData(worldFile);
+
+        if(world.equals("new")) {
+            if (!IOMethods.deleteDirectory(worldFile)) {
+                LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
+                return 0;
+            }
+        }
+        else {
+            LOGGER.error("Feature not Implemented");
+        }
+
         source.getServer().halt(false);
-
         return Command.SINGLE_SUCCESS;
-    }
-
-    private void savePlayerData(File worldFile) {
-        //select files
-        File[] files = worldFile.getParentFile().listFiles();
-        if(files == null) return;
-        File saveFile = Arrays.stream(files)
-                .filter(a -> a.getName().equals("playerData"))
-                .findFirst()
-                .orElse(new File(worldFile.getParentFile().getAbsolutePath() + "/playerData"));
-        if(!saveFile.exists() && !saveFile.mkdir()) return;
-
-        //copy data
-        LOGGER.info("Caching Player Data.");
-        Path playerData = Path.of(worldFile.getAbsolutePath() + "/playerdata");
-        Path playerDataCopy = Path.of(saveFile.getAbsolutePath() + "/playerdata");
-        IOMethods.copyDirectory(playerData, playerDataCopy);
     }
 }
