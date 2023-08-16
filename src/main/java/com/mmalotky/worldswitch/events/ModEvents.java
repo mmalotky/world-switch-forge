@@ -13,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Mod.EventBusSubscriber(modid = WorldSwitch.MOD_ID)
@@ -22,7 +23,7 @@ public class ModEvents {
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
         new SetWorldCommand(event.getDispatcher());
-        new StashCommand(event.getDispatcher());
+        //new StashCommand(event.getDispatcher());
     }
 
     @SubscribeEvent
@@ -31,7 +32,18 @@ public class ModEvents {
         String world = event.getServer().getWorldData().getLevelName();
 
         Path playerData = Path.of(serverDirectory + "/playerData/playerdata");
-        Path playerDataCopy = Path.of(serverDirectory + String.format("/%s/playerdata", world));
+        Path link = Path.of(serverDirectory + String.format("/%s/playerdata", world));
+        if(Files.isSymbolicLink(link)) return;
+
+        LOGGER.info(String.format("Creating a symbolic link at /%s/playerdata", world));
+        try {
+            if(Files.exists(link))  Files.delete(link);
+            Files.createSymbolicLink(link, playerData);
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+            e.printStackTrace();
+        }
+
         String[] players = new File(String.valueOf(playerData)).list();
         if(players == null || players.length == 0) return;
 
@@ -61,9 +73,6 @@ public class ModEvents {
                 e.printStackTrace();
             }
         }
-
-        LOGGER.info("Injecting player data.");
-        IOMethods.copyDirectory(playerData, playerDataCopy);
 
         LOGGER.info("Player Data Set");
     }

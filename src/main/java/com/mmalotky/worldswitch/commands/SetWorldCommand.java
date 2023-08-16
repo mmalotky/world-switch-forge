@@ -10,6 +10,8 @@ import net.minecraft.commands.Commands;
 import org.slf4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 public class SetWorldCommand {
@@ -37,9 +39,16 @@ public class SetWorldCommand {
             return 0;
         }
 
-        StashCommand.stashPlayerData(worldFile);
+        //StashCommand.stashPlayerData(worldFile);
 
         if(world.equals("new")) {
+            try {
+                Files.delete(Path.of(worldFile.getAbsolutePath() + "/playerdata"));
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
+            }
+
             if (!IOMethods.deleteDirectory(worldFile)) {
                 LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
                 return 0;
