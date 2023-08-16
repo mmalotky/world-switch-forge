@@ -12,6 +12,8 @@ public class IOMethods {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     public static boolean deleteDirectory(File directory) {
+        if(Files.isSymbolicLink(directory.toPath())) return directory.delete();
+
         File[] files = directory.listFiles();
         if(files == null) return false;
         else if(files.length == 0) return directory.delete();

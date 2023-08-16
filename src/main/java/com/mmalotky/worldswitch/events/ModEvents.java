@@ -1,7 +1,7 @@
 package com.mmalotky.worldswitch.events;
 
 import com.mmalotky.worldswitch.WorldSwitch;
-import com.mmalotky.worldswitch.commands.SetWorldCommand;
+import com.mmalotky.worldswitch.commands.WorldCommand;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.*;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -20,7 +20,7 @@ public class ModEvents {
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
-        new SetWorldCommand(event.getDispatcher());
+        new WorldCommand(event.getDispatcher());
     }
 
     @SubscribeEvent
