@@ -39,8 +39,6 @@ public class SetWorldCommand {
             return 0;
         }
 
-        //StashCommand.stashPlayerData(worldFile);
-
         if(world.equals("new")) {
             try {
                 Files.delete(Path.of(worldFile.getAbsolutePath() + "/playerdata"));
