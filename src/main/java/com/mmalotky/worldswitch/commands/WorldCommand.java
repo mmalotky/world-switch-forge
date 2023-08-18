@@ -7,6 +7,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -48,6 +50,11 @@ public class WorldCommand {
         return Command.SINGLE_SUCCESS;
     }
     private int setWorld(CommandSourceStack source, String world) {
+        LOGGER.info("Disconnecting Players");
+        source.getLevel()
+                .getPlayers(p -> true)
+                .forEach(player -> player.connection.disconnect(new TextComponent("Server shut down.")));
+
         String worldName = source.getServer().getWorldData().getLevelName();
         File worldFile = source.getServer().getFile(String.format("./%s", worldName));
 
