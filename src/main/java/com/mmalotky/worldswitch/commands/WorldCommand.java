@@ -60,14 +60,22 @@ public class WorldCommand {
             return 0;
         }
 
-        if(world.equals("new")) {
-            if (!IOMethods.deleteDirectory(worldFile)) {
-                LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
+        if(!world.equals("new")) {
+            LOGGER.info(String.format("Updating worldConf.cfg for world %s", world));
+            File worldConfig = new File("./worldConfig.cfg");
+            if(!checkWorldConfig(worldConfig)) return 0;
+
+            try(PrintWriter writer = new PrintWriter(worldConfig)) {
+                writer.println(world);
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
                 return 0;
             }
         }
-        else {
-            LOGGER.error("Feature not Implemented");
+
+        if (!IOMethods.deleteDirectory(worldFile)) {
+            LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
             return 0;
         }
 
@@ -75,12 +83,26 @@ public class WorldCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private File[] getWorldsFiles(File worldsFile) {
+    public static File[] getWorldsFiles(File worldsFile) {
         if(!worldsFile.exists()) worldsFile.mkdir();
         File[] worldsFiles = worldsFile.listFiles();
         if(worldsFiles == null) {
             LOGGER.error("Worlds file not found.");
         }
         return worldsFiles;
+    }
+
+    public static boolean checkWorldConfig(File worldConfig) {
+        try {
+            if(!worldConfig.exists() && !worldConfig.createNewFile()) {
+                LOGGER.error("Could not create worldConfig.cfg");
+                return false;
+            }
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 }
