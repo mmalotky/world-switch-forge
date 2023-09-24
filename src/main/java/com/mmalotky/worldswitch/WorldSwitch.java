@@ -37,7 +37,9 @@ public class WorldSwitch
     private void setup(final FMLCommonSetupEvent event) {
         // some preinit code
         LOGGER.info("HELLO FROM PREINIT");
-        LOGGER.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
+
+        LOGGER.info("Checking PlayerData");
+        WorldCommand.checkPlayerData();
 
         LOGGER.info("Checking for WorldSet");
         File worldConfig = new File("./worldConfig.cfg");

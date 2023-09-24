@@ -8,7 +8,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -39,7 +38,9 @@ public class WorldCommand {
 
         Path destination = Path.of(String.format("%s/%s",worldsFile.getAbsolutePath(),world));
         if(world.equals("new") || Files.exists(destination)) {
-            LOGGER.error(String.format("%s is not available", world));
+            String msg = String.format("'%s' is not available", world);
+            LOGGER.error(msg);
+            source.sendFailure(new TextComponent(msg));
             return 0;
         }
 
@@ -47,28 +48,29 @@ public class WorldCommand {
         Path origin = source.getServer().getFile(String.format("./%s", worldName)).toPath();
         IOMethods.copyDirectory(origin, destination);
 
+        source.sendSuccess(new TextComponent(String.format("World '%s' saved", world)), true);
         return Command.SINGLE_SUCCESS;
     }
     private int setWorld(CommandSourceStack source, String world) {
-        LOGGER.info("Disconnecting Players");
-        source.getLevel()
-                .getPlayers(p -> true)
-                .forEach(player -> player.connection.disconnect(new TextComponent("Server shut down.")));
-
         String worldName = source.getServer().getWorldData().getLevelName();
         File worldFile = source.getServer().getFile(String.format("./%s", worldName));
 
         File worldsFile = source.getServer().getFile("./worlds");
         File[] worldsFiles = getWorldsFiles(worldsFile);
-        if(worldsFiles == null) return 0;
+        if(worldsFiles == null) {
+            source.sendFailure(new TextComponent("IO failure"));
+            return 0;
+        }
 
         if(!world.equals("new") && Arrays.stream(worldsFiles).noneMatch(file -> file.getName().equals(world))) {
-            LOGGER.error(String.format("World %s not recognised", world));
+            String msg = String.format("World '%s' not recognised", world);
+            LOGGER.error(msg);
+            source.sendFailure(new TextComponent(msg));
             return 0;
         }
 
         if(!world.equals("new")) {
-            LOGGER.info(String.format("Updating worldConf.cfg for world %s", world));
+            LOGGER.info(String.format("Updating worldConf.cfg for world '%s'", world));
             File worldConfig = new File("./worldConfig.cfg");
             if(!checkWorldConfig(worldConfig)) return 0;
 
@@ -76,10 +78,17 @@ public class WorldCommand {
                 writer.println(world);
             } catch (IOException e) {
                 LOGGER.error(e.getMessage());
+                source.sendFailure(new TextComponent("IO failure"));
                 e.printStackTrace();
                 return 0;
             }
         }
+
+        LOGGER.info("Disconnecting Players");
+        source.getLevel()
+                .getPlayers(p -> true)
+                .forEach(player -> player.connection.disconnect(new TextComponent("Server shut down.")));
+
 
         if (!IOMethods.deleteDirectory(worldFile)) {
             LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
@@ -97,6 +106,13 @@ public class WorldCommand {
             LOGGER.error("Worlds file not found.");
         }
         return worldsFiles;
+    }
+
+    public static void checkPlayerData() {
+        File playerDataFile = new File("./playerData");
+        File playerdataFile = new File("./playerData/playerdata");
+        if(!playerDataFile.exists() && playerDataFile.mkdir()) LOGGER.error("Could not create playerData folder");
+        if(!playerdataFile.exists() && playerdataFile.mkdir()) LOGGER.error("Could not create playerdata folder");
     }
 
     public static boolean checkWorldConfig(File worldConfig) {
