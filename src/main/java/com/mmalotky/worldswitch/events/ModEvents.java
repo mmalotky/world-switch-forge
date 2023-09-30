@@ -1,16 +1,15 @@
 package com.mmalotky.worldswitch.events;
 
+import com.mmalotky.worldswitch.IO.IOMethods;
 import com.mmalotky.worldswitch.WorldSwitch;
 import com.mmalotky.worldswitch.commands.WorldCommand;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.*;
-import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -27,11 +26,23 @@ public class ModEvents {
     }
 
     @SubscribeEvent
-    public static void injectPlayerData(ServerStartingEvent event) {
+    public static void deleteWorld(ServerStoppedEvent event) {
+        String worldName = event.getServer().getWorldData().getLevelName();
+        File worldFile = event.getServer().getFile(String.format("./%s", worldName));
+
+        if (!IOMethods.deleteDirectory(worldFile)) {
+            LOGGER.error(String.format("Error: Unable to delete world file %s.", worldName));
+        }
+    }
+
+    @SubscribeEvent
+    public static void injectPlayerData(ServerStartedEvent event) {
         String serverDirectory = event.getServer().getServerDirectory().getAbsolutePath();
         String world = event.getServer().getWorldData().getLevelName();
 
-        Path playerData = Path.of(serverDirectory + "/playerData/playerdata");
+        Path playerData = Path.of(serverDirectory + "/playerData");
+        WorldCommand.setupPlayerDataFiles();
+
         Path link = Path.of(serverDirectory + String.format("/%s/playerdata", world));
         if(Files.isSymbolicLink(link)) return;
 

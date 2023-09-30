@@ -4,8 +4,6 @@ import com.mmalotky.worldswitch.IO.IOMethods;
 import com.mmalotky.worldswitch.commands.WorldCommand;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.dedicated.DedicatedServerSettings;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -18,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(WorldSwitch.MOD_ID)
 public class WorldSwitch
 {
@@ -37,9 +34,8 @@ public class WorldSwitch
     private void setup(final FMLCommonSetupEvent event) {
         // some preinit code
         LOGGER.info("HELLO FROM PREINIT");
-
-        LOGGER.info("Checking PlayerData");
-        WorldCommand.checkPlayerData();
+        LOGGER.info("Checking for playerData");
+        WorldCommand.setupPlayerDataFiles();
 
         LOGGER.info("Checking for WorldSet");
         File worldConfig = new File("./worldConfig.cfg");
